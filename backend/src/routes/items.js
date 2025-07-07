@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const router = express.Router();
+const Joi = require('joi');
 const DATA_PATH = path.join(__dirname, '../../../data/items.json');
 
 const itemSchema = Joi.object({
@@ -17,7 +18,7 @@ const itemSchema = Joi.object({
 
   category: Joi.string()
     .max(50)
-    .optional()
+    .required()
     .messages({
       'string.max': 'category must be 50 characters or less'
     }),
@@ -79,7 +80,8 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
       // Validate payload
-      const { error, value } = itemSchema.validate(item, {
+      const item = req.body;
+      const { error } = itemSchema.validate(item, {
         abortEarly: false,
         stripUnknown: true
       });
