@@ -42,19 +42,39 @@ async function readData() {
 router.get('/', async (req, res, next) => {
   try {
     const data = await readData();
-    const { limit, q } = req.query;
+    const { limit = 10, page = 1, q } = req.query;
     let results = data;
 
+    // Search functionality
     if (q) {
-      // Simple substring search (sub‑optimal)
-      results = results.filter(item => item.name.toLowerCase().includes(q.toLowerCase()));
+      // Search in both name and category
+      results = results.filter(item => 
+        item.name.toLowerCase().includes(q.toLowerCase()) ||
+        item.category.toLowerCase().includes(q.toLowerCase())
+      );
     }
 
-    if (limit) {
-      results = results.slice(0, parseInt(limit));
-    }
+    // Calculate pagination
+    const totalItems = results.length;
+    const totalPages = Math.ceil(totalItems / parseInt(limit));
+    const currentPage = parseInt(page);
+    const offset = (currentPage - 1) * parseInt(limit);
 
-    res.json(results);
+    // Apply pagination
+    const paginatedResults = results.slice(offset, offset + parseInt(limit));
+
+    // Return paginated response with metadata
+    res.json({
+      items: paginatedResults,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalItems,
+        itemsPerPage: parseInt(limit),
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1
+      }
+    });
   } catch (err) {
     next(err);
   }
