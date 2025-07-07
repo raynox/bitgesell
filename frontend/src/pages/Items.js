@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useData } from '../state/DataContext';
 import { Link } from 'react-router-dom';
+import { FixedSizeList as List } from 'react-window';
 
 function Items() {
   const { items, pagination, isLoading, setIsLoading, fetchItems } = useData();
@@ -52,6 +53,32 @@ function Items() {
     setSearchTerm(e.target.value);
   };
 
+  // Virtualized item renderer
+  const ItemRenderer = ({ index, style }) => {
+    const item = items[index];
+    if (!item) return null;
+
+    return (
+      <div style={style}>
+        <div style={{ 
+          padding: '10px', 
+          borderBottom: '1px solid #eee',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '60px'
+        }}>
+          <Link to={'/items/' + item.id} style={{ textDecoration: 'none', color: '#333' }}>
+            {item.name}
+          </Link>
+          <span style={{ color: '#666', fontSize: '14px' }}>
+            {item.category} - ${item.price}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading && items.length === 0) {
     return <p>Loading...</p>;
   }
@@ -75,25 +102,19 @@ function Items() {
         />
       </div>
 
-      {/* Items List */}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {items.map(item => (
-          <li key={item.id} style={{ 
-            padding: '10px', 
-            borderBottom: '1px solid #eee',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <Link to={'/items/' + item.id} style={{ textDecoration: 'none', color: '#333' }}>
-              {item.name}
-            </Link>
-            <span style={{ color: '#666', fontSize: '14px' }}>
-              {item.category} - ${item.price}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {/* Virtualized Items List */}
+      {items.length > 0 && (
+        <div style={{ height: '400px', border: '1px solid #eee', borderRadius: '4px' }}>
+          <List
+            height={400}
+            itemCount={items.length}
+            itemSize={60}
+            width="100%"
+          >
+            {ItemRenderer}
+          </List>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {pagination.totalPages > 1 && (
