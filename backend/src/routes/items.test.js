@@ -38,22 +38,35 @@ describe('Items Routes', () => {
   });
 
   describe('GET /api/items', () => {
-    it('should return all items', async () => {
+    it('should return all items with pagination metadata', async () => {
       const res = await request(app).get('/api/items');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mockData);
+      expect(res.body).toHaveProperty('items');
+      expect(res.body).toHaveProperty('pagination');
+      expect(res.body.items).toEqual(mockData);
+      expect(res.body.pagination).toEqual({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 2,
+        itemsPerPage: 10,
+        hasNextPage: false,
+        hasPrevPage: false
+      });
     });
 
     it('should filter items by query', async () => {
       const res = await request(app).get('/api/items?q=laptop');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual([mockData[0]]);
+      expect(res.body.items).toEqual([mockData[0]]);
+      expect(res.body.pagination.totalItems).toBe(1);
     });
 
     it('should limit the number of items', async () => {
       const res = await request(app).get('/api/items?limit=1');
       expect(res.status).toBe(200);
-      expect(res.body.length).toBe(1);
+      expect(res.body.items.length).toBe(1);
+      expect(res.body.pagination.itemsPerPage).toBe(1);
+      expect(res.body.pagination.totalPages).toBe(2);
     });
 
     it('should handle file read errors', async () => {
