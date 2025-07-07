@@ -1,23 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useData } from '../state/DataContext';
 import { Link } from 'react-router-dom';
 
 function Items() {
   const { items, fetchItems } = useData();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let active = true;
+    const abortController = new AbortController();
 
-    // Intentional bug: setState called after component unmount if request is slow
-    fetchItems().catch(console.error);
+    const loadItems = async () => {
+      try {
+        setIsLoading(true);
+        await fetchItems(abortController.signal);
+        setIsLoading(false);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching items:', error);
+          setIsLoading(false);
+        }
+      }
+    };
 
-    // Clean‑up to avoid memory leak (candidate should implement)
+    loadItems();
+
     return () => {
-      active = false;
+      abortController.abort();
     };
   }, [fetchItems]);
 
-  if (!items.length) return <p>Loading...</p>;
+  if (isLoading) return <p>Loading...</p>;
 
   return (
     <ul>
